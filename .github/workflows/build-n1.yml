@@ -12,10 +12,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Compile firmware
-        run: |
-          ./compile.sh BOARD=arm-64 BRANCH=current RELEASE=bullseye BUILD_MINIMAL=no BUILD_DESKTOP=no KERNEL_ONLY=no KERNEL_CONFIGURE=no COMPRESS_OUTPUTIMAGE=sha,img
+      - name: armbian
+        run:
+          git clone --depth 1 https://github.com/armbian/build armbian
+          mkdir -p ./armbian/patch/kernel/arm-64-current/
+          mkdir -p ./armbian/patch/kernel/arm-64-legacy/
+          mkdir -p ./armbian/packages/bsp/arm-64/
+          cp ./config/boards/arm-64.conf ./armbian/config/boards/
+          cp ./config/sources/families/arm-64.conf ./armbian/config/sources/families/
+          cp ./config/kernel/linux-arm-64-current.config ./armbian/config/kernel/
+          cp ./config/kernel/linux-arm-64-legacy.config ./armbian/config/kernel/
+          cp ./packages/blobs/asound.state/asound.state.phicomm-n1 ./armbian/packages/blobs/asound.state/
+          rsync -av ./packages/bsp/arm-64/ ./armbian/packages/bsp/arm-64/
+          rsync -av ./config/bootscripts/ ./armbian/config/bootscripts/
+          rsync -av ./patch/kernel/arm-64-current/ ./armbian/patch/kernel/arm-64-current/
+          rsync -av ./patch/kernel/arm-64-legacy/ ./armbian/patch/kernel/arm-64-legacy/
 
+      - name: Compile firmware
+        run: 
+          cd armbian
+          ./compile.sh BOARD=arm-64 BRANCH=current RELEASE=bullseye BUILD_MINIMAL=no BUILD_DESKTOP=no KERNEL_ONLY=no KERNEL_CONFIGURE=no COMPRESS_OUTPUTIMAGE=sha,img
           echo "======================="
           echo "Space usage:"
           echo "======================="
@@ -23,7 +39,7 @@ jobs:
           echo "======================="
           du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
           du -h --max-depth=1 ./bin
-
+          
       - name: Upload artifact
         uses: actions/upload-artifact@master
         with:
