@@ -1,9 +1,8 @@
 name: build-n1
 
-on:
-  push:
-    tags:
-      - n1-build-v*
+on: 
+  release:
+    types: [published]
       
 jobs:
   build:
